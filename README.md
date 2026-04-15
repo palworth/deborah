@@ -325,6 +325,14 @@ Without Sentry configured, `npm run deploy` just runs `wrangler deploy` as befor
 
 ---
 
+## Roadmap
+
+Not promises — just ideas on the shortlist. File an issue if you want to prioritize one.
+
+- **`delete_call(video_id)` MCP tool** — let Claude.ai prune unwanted calls end-to-end: remove the D1 row, delete the matching Vectorize chunks (by deterministic `{id}-{chunk}` IDs), and archive the Notion transcript page + any Followup rows tied to it. Needs a confirmation / dry-run guard before landing, since the tool is destructive and Claude can call it without a human in the loop.
+
+---
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
