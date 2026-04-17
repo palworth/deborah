@@ -134,9 +134,9 @@ sequenceDiagram
     end
     W->>D: SELECT — both events present? not synced yet?
     alt both present + not yet synced
-        W->>N: create transcript page
+        W->>N: create Transcripts row (metadata + Bluedot link)
         loop each action item
-            W->>N: create followup row (Status=Inbox)
+            W->>N: create Followup row (Status=Inbox, Meeting relation → Transcripts)
         end
         W->>D: UPDATE notion_synced_at
     end
@@ -319,17 +319,19 @@ This design lets every tool be unit-tested without loading the MCP SDK — criti
 
 ### Notion databases
 
-**Call Transcripts** (`NOTION_TRANSCRIPTS_DATA_SOURCE_ID`)
+**Call Transcripts** (`NOTION_TRANSCRIPTS_DATA_SOURCE_ID`) — metadata hub, not a summary archive. Bluedot's native Notion sync owns the rich summary page; aftercall's row is the structured layer for filtering + the relation target for Followups.
 
 | Property | Type | Notes |
 |----------|------|-------|
 | `Name` | title | Meeting title |
 | `Date` | date | Recording date |
 | `Participants` | multi_select | Auto-grown as new participants appear |
-| `Summary` | rich_text | Our extracted summary |
-| `Action Items` | rich_text | Inline list |
 | `Video ID` | rich_text | For joining to D1 |
 | `Language` | rich_text | |
+| `Recording URL` | url | Bluedot recording / preview URL |
+| `Bluedot Page` | url | Optional best-effort link to Bluedot's native Notion summary page |
+
+Page body: a single "View on Bluedot" paragraph block when `Recording URL` is set; otherwise empty. No summary content is rendered in the body.
 
 **Followups** (`NOTION_FOLLOWUPS_DATA_SOURCE_ID`)
 
@@ -344,6 +346,11 @@ This design lets every tool be unit-tested without loading the MCP SDK — criti
 | `Source Link` | url | Bluedot meeting URL |
 | `Meeting Title` | rich_text | For quick human-scan in the inbox |
 | `Video ID` | rich_text | For joining to D1 |
+| `Meeting` | relation | Two-way relation to the Transcripts row. Click-through from inbox → meeting context. |
+
+**Bluedot's native Notion sync** (separate — not aftercall's)
+
+Bluedot itself writes a rich summary page per meeting into a "BlueDot Calls" parent page. That page owns the human-readable narrative (`## Overview`, grouped `## Action Items` by person, `## Topics`). aftercall deliberately doesn't duplicate that content — the `Bluedot Page` URL on the Transcripts row is a best-effort pointer to it, and the `answer_from_transcript` MCP tool pulls raw transcript chunks from Vectorize/D1 for Q&A rather than reading Bluedot's rendered page.
 
 ### KV `OAUTH_KV`
 
@@ -361,7 +368,7 @@ This design lets every tool be unit-tested without loading the MCP SDK — criti
 | `src/index.ts` | Worker entry — `export { default } from "./mcp/index"` |
 | `src/mcp/index.ts` | OAuthProvider wiring + Hono default app; owns /authorize, /auth/github/callback, /auth/revoke, /, webhook fallback |
 | `src/mcp/handler.ts` | `/mcp` API handler; dynamic imports `./tools` to keep SDK out of non-MCP test paths |
-| `src/mcp/tools.ts` | `createMcpServer`, `handleMcpRequest`; registers 5 tools with Zod schemas |
+| `src/mcp/tools.ts` | `createMcpServer`, `handleMcpRequest`; registers 6 tools with Zod schemas |
 | `src/mcp/auth/github.ts` | GitHub OAuth handler — state stash, code exchange, user lookup, allowlist check |
 | `src/mcp/auth/allowlist.ts` | Pure `isAllowed(username, csv)` — case/whitespace tolerant |
 | `src/mcp/tools/*.ts` | Pure async tool functions `(args, env, deps?) => ToolResult` |

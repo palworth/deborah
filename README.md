@@ -45,13 +45,14 @@ Every Bluedot recording becomes:
 
 1. **A D1 row** — `transcripts` table, idempotent on `video_id`, holding raw text + structured summary + participants + action items.
 2. **Embedded chunks** in Cloudflare Vectorize (1536d, cosine) for semantic search.
-3. **A Notion "Call Transcripts" page** — human-readable summary + participant list.
-4. **One "Followup" row per action item** in a Notion inbox — `Status = Inbox`, ready to triage.
-5. **MCP access from Claude.ai** — five tools for semantic search, detail lookup, followups, and owner-scoped action items.
+3. **A Notion Transcripts row** — metadata hub (Date, Participants, Recording URL, link to Bluedot's native summary page). No duplicated summary content — Bluedot's own Notion sync owns that.
+4. **One Followup row per action item** in a Notion inbox — `Status = Inbox`, linked via a `Meeting` relation back to the Transcripts row, ready to triage.
+5. **MCP access from Claude.ai** — six tools for semantic search, per-call Q&A (RAG), detail lookup, followups, and owner-scoped action items.
 
 Then you ask Claude.ai things like:
 
 - _"What did I commit to do for Pierce in the last week?"_
+- _"In my IT hiring call, what starting compensation did we agree on?"_
 - _"Find every action item assigned to Andy since March."_
 - _"Summarize my open Bluedot followups."_
 - _"What calls mention IronRidge?"_
@@ -128,6 +129,7 @@ Full OAuth + Bluedot + debug walkthrough: [`docs/auth.md`](./docs/auth.md).
 |------|---|
 | [`search_calls(query, limit?)`](./docs/tools.md#search_calls) | Semantic search over all transcripts via OpenAI embeddings + Vectorize |
 | [`get_call(video_id)`](./docs/tools.md#get_call) | Full details of one call: summary, participants, action items |
+| [`answer_from_transcript(video_id, question)`](./docs/tools.md#answer_from_transcript) | RAG over a single call — drill-down Q&A grounded in that meeting's transcript |
 | [`list_followups(status?, source?, limit?)`](./docs/tools.md#list_followups) | Query the Notion Followups DB with select filters |
 | [`find_action_items_for(person, since?)`](./docs/tools.md#find_action_items_for) | All action items assigned to a person (substring match on owner) |
 | [`recent_calls(days?)`](./docs/tools.md#recent_calls) | Last N days of calls, newest first |
@@ -336,7 +338,12 @@ Without Sentry configured, `npm run deploy` just runs `wrangler deploy` as befor
 
 Not promises — just ideas on the shortlist. File an issue if you want to prioritize one.
 
-- **`delete_call(video_id)` MCP tool** — let Claude.ai prune unwanted calls end-to-end: remove the D1 row, delete the matching Vectorize chunks (by deterministic `{id}-{chunk}` IDs), and archive the Notion transcript page + any Followup rows tied to it. Needs a confirmation / dry-run guard before landing, since the tool is destructive and Claude can call it without a human in the loop.
+- **`delete_call(video_id)` MCP tool** — let Claude.ai prune unwanted calls end-to-end:
+  - Delete the D1 `transcripts` row
+  - Delete the matching Vectorize chunks (by deterministic `{id}-{chunk}` IDs)
+  - Archive the aftercall Transcripts page + every Followup row related via the `Meeting` relation (unlink before archive, or Notion will orphan the relation)
+  - Leave Bluedot's native Notion summary page alone — it's Bluedot's surface, not ours
+  - Needs a confirmation / dry-run guard before landing, since the tool is destructive and Claude can call it without a human in the loop.
 
 ---
 
