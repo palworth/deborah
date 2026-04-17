@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-Five tools are exposed at `/mcp`. Every tool returns a single `text` content block — Claude.ai renders the markdown directly.
+Six tools are exposed at `/mcp`. Every tool returns a single `text` content block — Claude.ai renders the markdown directly.
 
 All tools require a valid bearer token (minted via the GitHub OAuth flow — see [auth.md](./auth.md)).
 
@@ -170,6 +170,50 @@ Returns `"No calls found in the last N day(s)."` when empty.
 - _"What did I do last week?"_
 - _"Summarize my calls from the last 30 days."_
 - _"Which meetings have I had in the past 3 days?"_
+
+---
+
+## `answer_from_transcript`
+
+Ask a question about a single indexed call. Runs RAG over that call's chunks: embed the question, query Vectorize filtered by `transcript_id`, feed the top-8 chunks + question to `gpt-5-mini`, return a grounded answer.
+
+Where `search_calls` is "which calls mention X?" across the corpus, `answer_from_transcript` is "in _this_ call, what did we decide about X?"
+
+**Input**
+
+| Param | Type | Required | Notes |
+|-------|------|----------|-------|
+| `video_id` | string | yes | The `video_id` of the call to ask about. |
+| `question` | string | yes | The natural-language question. |
+
+**Output**
+
+A single text block with the model's answer. The model is prompted to answer using only the transcript excerpts, and to say so plainly if the answer isn't in the excerpts — it should not invent details.
+
+When Vectorize returns zero chunks (eventual consistency right after ingest, or metadata-index miss), the tool falls back to the full `raw_text` stored in D1 and passes a truncated copy to the model instead. If neither path has content, returns `"Transcript not yet indexed — try again in a moment."`
+
+**Errors**
+
+- Unknown `video_id` → `"Call not found: <video_id>"`
+- No chunks in Vectorize AND empty `raw_text` → `"Transcript not yet indexed — try again in a moment."`
+
+**Sample prompts**
+
+- _"In the IT Hiring call, when did we discuss the €1,500 offer?"_
+- _"What did Jugoslav say about MCP servers?"_
+- _"Summarize the compensation section of the call at `meet.google.com/abc-xyz`."_
+- _"Did we agree on a start date for the new hire?"_
+
+**Prerequisite: metadata index**
+
+This tool uses `filter: { transcript_id }` on Vectorize, which requires a metadata index pre-declared on the `transcript_id` property. `scripts/setup.ts` creates this for new forks; existing deployments run:
+
+```bash
+npx wrangler vectorize create-metadata-index aftercall-vectors \
+  --property-name=transcript_id --type=number
+```
+
+Metadata indexes only apply to vectors inserted _after_ index creation. If you have historical data, `scripts/reindex-vectorize.ts` re-upserts every existing chunk so the filter works across your whole history. See `conductor/tracks/notion-redesign-and-rag-tool/migration.md`.
 
 ---
 

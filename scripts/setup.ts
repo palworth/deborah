@@ -269,20 +269,42 @@ async function step3_provisionVectorize(): Promise<void> {
 
   if (indexes.find((i) => i.name === VECTORIZE_INDEX_NAME)) {
     ok(`Using existing Vectorize index \`${VECTORIZE_INDEX_NAME}\``);
-    return;
+  } else {
+    info(`Creating Vectorize index \`${VECTORIZE_INDEX_NAME}\`...`);
+    const create = runCli("npx", [
+      "wrangler",
+      "vectorize",
+      "create",
+      VECTORIZE_INDEX_NAME,
+      `--dimensions=${VECTORIZE_DIMENSIONS}`,
+      `--metric=${VECTORIZE_METRIC}`,
+    ]);
+    if (create.status !== 0) fail(`Failed to create Vectorize: ${create.stderr || create.stdout}`);
+    ok(`Created Vectorize index (${VECTORIZE_DIMENSIONS}d, ${VECTORIZE_METRIC})`);
   }
 
-  info(`Creating Vectorize index \`${VECTORIZE_INDEX_NAME}\`...`);
-  const create = runCli("npx", [
+  // Metadata index on transcript_id — required by the answer_from_transcript
+  // MCP tool so it can filter Vectorize results to a specific call. Idempotent:
+  // Cloudflare returns "already exists" on re-creates, which we swallow.
+  info(`Ensuring Vectorize metadata index on \`transcript_id\`...`);
+  const mdIdx = runCli("npx", [
     "wrangler",
     "vectorize",
-    "create",
+    "create-metadata-index",
     VECTORIZE_INDEX_NAME,
-    `--dimensions=${VECTORIZE_DIMENSIONS}`,
-    `--metric=${VECTORIZE_METRIC}`,
+    "--property-name=transcript_id",
+    "--type=number",
   ]);
-  if (create.status !== 0) fail(`Failed to create Vectorize: ${create.stderr || create.stdout}`);
-  ok(`Created Vectorize index (${VECTORIZE_DIMENSIONS}d, ${VECTORIZE_METRIC})`);
+  if (mdIdx.status !== 0) {
+    const out = (mdIdx.stderr || mdIdx.stdout).toLowerCase();
+    if (out.includes("already exists") || out.includes("conflict")) {
+      ok(`Metadata index on \`transcript_id\` already present`);
+    } else {
+      fail(`Failed to create metadata index: ${mdIdx.stderr || mdIdx.stdout}`);
+    }
+  } else {
+    ok(`Created metadata index on \`transcript_id\` (number)`);
+  }
 }
 
 async function step4_writeWranglerTomlAndMigrate(d1Id: string): Promise<void> {

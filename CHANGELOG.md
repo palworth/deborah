@@ -2,6 +2,46 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-04-16
+
+**Notion redesign + per-call RAG tool.** aftercall's Notion Transcripts DB stops duplicating Bluedot's native summary pages and becomes a structured metadata hub. New `answer_from_transcript` MCP tool for drilling into a specific call.
+
+### Added
+
+- **`answer_from_transcript(video_id, question)` MCP tool** — RAG over a single call. Embeds the question, filters Vectorize by `transcript_id`, concatenates top-8 chunks, passes to `gpt-5-mini`. Falls back to D1 `raw_text` when Vectorize returns zero chunks (eventual consistency or pre-metadata-index gap).
+- `Recording URL` + `Bluedot Page` URL properties on the Transcripts DB — structured links to the recording and Bluedot's native Notion summary page.
+- `Meeting` relation on the Followups DB pointing back to the Transcripts row. Click a followup → jump to its meeting.
+- Vectorize metadata index on `transcript_id` — required for the new tool's filter. `scripts/setup.ts` now creates it idempotently.
+- `scripts/reindex-vectorize.ts` — re-upserts existing chunks so the new metadata index covers historical vectors. One-off migration.
+- `scripts/backfill-meeting-relation.ts` — one-off backfill for `Meeting` relation on existing Followups (forker utility; not needed for new deploys).
+- `scripts/smoke-answer.ts` — canned eval set for `answer_from_transcript` against the deployed worker.
+- `conductor/` directory with project-wide context artifacts (product, tech stack, workflow, style guide, track specs).
+
+### Changed
+
+- **Transcripts page body** shrank to a single "View on Bluedot" link block — no more summary content. Bluedot's native Notion sync owns the rich summary narrative; aftercall's Transcripts DB provides structured metadata and filterable views that Bluedot doesn't.
+- `buildFollowupRowBody` now requires `transcriptPageId` and emits a `Meeting` relation property.
+- Handler skips followup creation (with a warn log) when the Transcripts page fails to create, to avoid orphan relations.
+- MCP tool count: **5 → 6**. MCP server version: `0.3.0 → 0.5.0`.
+- `docs/tools.md` documents the new tool + its metadata-index prerequisite.
+
+### Removed
+
+- `summaryToBlocks` / `heading3` / `richTextSegments` markdown parser in `src/notion.ts` — dead now that summary rendering moved out.
+- `Summary` and `Action Items` rich_text properties on the Transcripts DB (left as orphan columns on existing Notion rows; safe to ignore or manually archive).
+
+### Breaking
+
+- Existing deploys must run the migration steps in [`conductor/tracks/notion-redesign-and-rag-tool/migration.md`](./conductor/tracks/notion-redesign-and-rag-tool/migration.md): add the new Notion properties, create the Vectorize metadata index, and reindex existing vectors. Takes ~5 minutes.
+- Historical Followups rows will not get `Meeting` relations automatically — jchu96's production data had Video ID mismatches that made automated backfill impossible, documented in the migration guide. New Followups populate the relation correctly.
+- Fresh forks get the new schema automatically via the updated `npm run setup`.
+
+### Why
+
+Bluedot already produces a rich, structured summary page in Notion for every meeting (Overview + grouped Action Items + Topics under a "BlueDot Calls" parent). aftercall's previous Transcripts page was a lower-quality duplicate with a single long paragraph for the whole summary — sometimes triggering Notion's 2000-char rich_text limit with a 400 error. Rather than patch the parser (done in 0.4.x but dead-code now), this release acknowledges Bluedot as the summary owner and repositions aftercall's Notion surface as the structured layer Bluedot doesn't provide: filterable DB views, triageable action items, and cross-meeting relations.
+
+---
+
 ## [0.4.0] — 2026-04-15
 
 **Rebrand: `bluedot-rag` → `aftercall`.** Fresh worker URL, D1 database, and Vectorize index — all workspace-specific IDs moved out of committed config.
@@ -106,5 +146,8 @@ Initial public release. Bluedot → Cloudflare D1 + Vectorize → Notion Followu
 - Interactive `npm run setup` script that provisions D1, Vectorize, both Notion databases, and writes `.dev.vars` + `wrangler.toml`.
 - Migration script for historical Neon transcripts → D1 + Vectorize + Followups.
 
+[0.5.0]: https://github.com/jchu96/aftercall/releases/tag/v0.5.0
+[0.4.0]: https://github.com/jchu96/aftercall/releases/tag/v0.4.0
+[0.3.0]: https://github.com/jchu96/aftercall/releases/tag/v0.3.0
 [0.2.0]: https://github.com/jchu96/aftercall/releases/tag/v0.2.0
 [0.1.0]: https://github.com/jchu96/aftercall/releases/tag/v0.1.0

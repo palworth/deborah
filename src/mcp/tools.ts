@@ -15,10 +15,11 @@ import { getCall } from "./tools/get_call";
 import { listFollowups } from "./tools/list_followups";
 import { findActionItemsFor } from "./tools/find_action_items_for";
 import { recentCalls } from "./tools/recent_calls";
+import { answerFromTranscript } from "./tools/answer_from_transcript";
 
 export function createMcpServer(env: Env): McpServer {
   const server = new McpServer(
-    { name: "aftercall", version: "0.3.0" },
+    { name: "aftercall", version: "0.5.0" },
     { capabilities: { tools: {} } },
   );
 
@@ -97,6 +98,26 @@ export function createMcpServer(env: Env): McpServer {
       },
     },
     async (args) => (await findActionItemsFor(args, env)) as any,
+  );
+
+  server.registerTool(
+    "answer_from_transcript",
+    {
+      title: "Answer from transcript",
+      description:
+        "Ask a question about a specific call. Runs RAG over that call's transcript chunks (via Vectorize) and returns a grounded answer. Use this for 'when did we discuss X in this call?' or 'what did Y say about Z?' style queries against a single meeting.",
+      inputSchema: {
+        video_id: z
+          .string()
+          .min(1)
+          .describe("The video_id of the call (e.g. `https://meet.google.com/abc-xyz`)."),
+        question: z
+          .string()
+          .min(1)
+          .describe("The natural-language question to answer from this transcript."),
+      },
+    },
+    async (args) => (await answerFromTranscript(args, env)) as any,
   );
 
   server.registerTool(
