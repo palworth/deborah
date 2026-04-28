@@ -28,7 +28,7 @@ id = "<set-by-setup-script>"
 
 [[r2_buckets]]
 binding = "VAULT_R2"
-bucket_name = "deborah-vault-backups"
+bucket_name = "deboahvaultbackups"
 
 # Secrets (set via `wrangler secret put <NAME>`):
 # - OPENAI_API_KEY

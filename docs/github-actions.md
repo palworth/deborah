@@ -34,7 +34,7 @@ Set these under **Settings -> Secrets and variables -> Actions -> Variables**:
 | `CLOUDFLARE_D1_DATABASE_ID` | `2be...e1e` | D1 database ID for the `DB` binding |
 | `CLOUDFLARE_VECTORIZE_INDEX_NAME` | `aftercall-vectors` | Vectorize index name |
 | `CLOUDFLARE_KV_NAMESPACE_ID` | `60e...805` | KV namespace ID for OAuth state |
-| `CLOUDFLARE_VAULT_R2_BUCKET_NAME` | `deborah-vault-backups` | R2 bucket for Obsidian vault backups |
+| `CLOUDFLARE_VAULT_R2_BUCKET_NAME` | `deboahvaultbackups` | R2 bucket for Obsidian vault backups |
 | `BASE_URL` | `https://aftercall.example.workers.dev` | Public Worker origin used by OAuth callbacks |
 | `ALLOWED_USERS` | `palworth` | Comma-separated GitHub usernames allowed to use MCP |
 

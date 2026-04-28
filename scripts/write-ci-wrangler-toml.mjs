@@ -36,7 +36,7 @@ const config = {
   d1DatabaseId: requiredEnv("CLOUDFLARE_D1_DATABASE_ID"),
   vectorizeIndexName: env("CLOUDFLARE_VECTORIZE_INDEX_NAME", "aftercall-vectors"),
   kvNamespaceId: requiredEnv("CLOUDFLARE_KV_NAMESPACE_ID"),
-  r2BucketName: env("CLOUDFLARE_VAULT_R2_BUCKET_NAME", "deborah-vault-backups"),
+  r2BucketName: env("CLOUDFLARE_VAULT_R2_BUCKET_NAME", "deboahvaultbackups"),
 };
 
 const toml = `name = ${tomlString(config.workerName)}
