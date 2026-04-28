@@ -196,6 +196,17 @@ End-to-end MCP transport (`tools/list`, `tools/call` through Streamable HTTP) is
 
 ---
 
+## CI/CD
+
+GitHub Actions runs typecheck + tests on pull requests and deploys the
+Cloudflare Worker on pushes to `main`. The deploy job generates the gitignored
+`wrangler.toml` from repository variables, validates the Worker bundle, applies
+D1 migrations, and then runs `npm run deploy`.
+
+Setup details: [`docs/github-actions.md`](./docs/github-actions.md).
+
+---
+
 ## Operating
 
 | Task | Command |
