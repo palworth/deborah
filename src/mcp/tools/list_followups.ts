@@ -46,6 +46,16 @@ export async function listFollowups(
   env: Env,
   deps: ListFollowupsDeps = {},
 ): Promise<ToolResult> {
+  if (!env.NOTION_INTEGRATION_KEY || !env.NOTION_FOLLOWUPS_DATA_SOURCE_ID) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: "Notion is not configured for this deployment — the followups database is disabled.",
+        },
+      ],
+    };
+  }
   const fetchFn = deps.fetchFn ?? fetch;
   const limit = Math.max(1, Math.min(input.limit ?? 25, 100));
 
