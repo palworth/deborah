@@ -28,7 +28,7 @@ import type { ActionItem, Participant } from "./schema";
 
 export interface HandlerDeps {
   openai: OpenAI;
-  notion: NotionDeps;
+  notion: NotionDeps | null;
   env: Env;
 }
 
@@ -260,6 +260,13 @@ async function syncToNotion(
   transcriptId: number,
   videoId: string,
 ): Promise<void> {
+  const notion = deps.notion;
+  const transcriptsDataSourceId = deps.env.NOTION_TRANSCRIPTS_DATA_SOURCE_ID;
+  const followupsDataSourceId = deps.env.NOTION_FOLLOWUPS_DATA_SOURCE_ID;
+  if (!notion || !transcriptsDataSourceId || !followupsDataSourceId) {
+    log("info", "notion_sync_skipped_not_configured", { transcript_id: transcriptId, video_id: videoId });
+    return;
+  }
   const row = await deps.env.DB
     .prepare(
       `SELECT title, summary, participants, action_items, language, notion_synced_at, created_at
@@ -296,7 +303,7 @@ async function syncToNotion(
       { name: "bluedot.notion.create_transcript_page", op: "http.client" },
       () => createTranscriptPage(
         {
-          dataSourceId: deps.env.NOTION_TRANSCRIPTS_DATA_SOURCE_ID,
+          dataSourceId: transcriptsDataSourceId,
           title: row.title,
           summary: row.summary,
           participants,
@@ -305,7 +312,7 @@ async function syncToNotion(
           language: row.language,
           createdAt: new Date(row.created_at + "Z"),
         },
-        deps.notion,
+        notion,
       ),
     );
     pageId = page.pageId;
@@ -334,7 +341,7 @@ async function syncToNotion(
           { name: "bluedot.notion.create_followup", op: "http.client" },
           () => createFollowupRow(
             {
-              dataSourceId: deps.env.NOTION_FOLLOWUPS_DATA_SOURCE_ID,
+              dataSourceId: followupsDataSourceId,
               task: item.task,
               owner: item.owner,
               due_date: item.due_date,
@@ -343,7 +350,7 @@ async function syncToNotion(
               videoId,
               transcriptPageId: pageId,
             },
-            deps.notion,
+            notion,
           ),
         );
         followupsCreated++;
@@ -375,7 +382,7 @@ async function syncToNotion(
 export function buildHandlerDeps(env: Env): HandlerDeps {
   return {
     openai: new OpenAI({ apiKey: env.OPENAI_API_KEY }),
-    notion: createNotionDeps(env.NOTION_INTEGRATION_KEY),
+    notion: env.NOTION_INTEGRATION_KEY ? createNotionDeps(env.NOTION_INTEGRATION_KEY) : null,
     env,
   };
 }

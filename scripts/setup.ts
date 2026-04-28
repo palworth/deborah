@@ -361,6 +361,27 @@ async function step5_setupNotion(
 }> {
   header("[5/10] Notion setup");
 
+  // Opt-out path — Notion is optional. When skipped, the handler no-ops Notion
+  // writes (pipeline still ingests to D1 + Vectorize) and the list_followups
+  // MCP tool returns a "not configured" message.
+  const wantNotion = (
+    await rl.question(
+      "  Enable Notion integration (transcript pages + followups inbox)? (y/N): ",
+    )
+  )
+    .trim()
+    .toLowerCase();
+  if (wantNotion !== "y" && wantNotion !== "yes") {
+    ok(`Skipping Notion — pipeline will ingest to D1 + Vectorize only`);
+    return {
+      token: "",
+      transcriptsDbId: "",
+      followupsDbId: "",
+      transcriptsDataSourceId: "",
+      followupsDataSourceId: "",
+    };
+  }
+
   // If both data source IDs are already configured, offer to reuse the existing DBs.
   if (
     existing.transcriptsDataSourceId &&
@@ -699,9 +720,11 @@ async function step7_writeConfig(input: {
   // .dev.vars
   const devVarsLines = [
     `OPENAI_API_KEY="${input.openaiKey}"`,
-    `NOTION_INTEGRATION_KEY="${input.notionToken}"`,
     `BLUEDOT_WEBHOOK_SECRET="whsec_set_after_bluedot_config"`,
   ];
+  if (input.notionToken) {
+    devVarsLines.splice(1, 0, `NOTION_INTEGRATION_KEY="${input.notionToken}"`);
+  }
   if (input.mcp) {
     devVarsLines.push(
       `GITHUB_CLIENT_ID="${input.mcp.githubClientId}"`,
@@ -784,8 +807,10 @@ async function step9_syncSecretsToProd(input: {
 
   const targets: Array<{ name: string; value: string }> = [
     { name: "OPENAI_API_KEY", value: input.openaiKey },
-    { name: "NOTION_INTEGRATION_KEY", value: input.notionToken },
   ];
+  if (input.notionToken) {
+    targets.push({ name: "NOTION_INTEGRATION_KEY", value: input.notionToken });
+  }
   if (input.mcp) {
     targets.push(
       { name: "GITHUB_CLIENT_ID", value: input.mcp.githubClientId },
@@ -896,7 +921,9 @@ function printFinalSummary(args: {
     console.log("\x1b[1m2. Push any remaining prod secrets\x1b[0m");
     console.log("   You skipped some during setup. Run:");
     console.log("     \x1b[90mnpx wrangler secret put OPENAI_API_KEY\x1b[0m");
-    console.log("     \x1b[90mnpx wrangler secret put NOTION_INTEGRATION_KEY\x1b[0m");
+    if (notion.followupsDataSourceId) {
+      console.log("     \x1b[90mnpx wrangler secret put NOTION_INTEGRATION_KEY\x1b[0m");
+    }
     if (mcp) {
       console.log("     \x1b[90mnpx wrangler secret put GITHUB_CLIENT_ID\x1b[0m");
       console.log("     \x1b[90mnpx wrangler secret put GITHUB_CLIENT_SECRET\x1b[0m");

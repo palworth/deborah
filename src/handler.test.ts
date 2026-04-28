@@ -109,7 +109,7 @@ describe("handleWebhook — single event arrival", () => {
     expect(res.status).toBe(200);
 
     expect(env.VECTORIZE.upsert).toHaveBeenCalledOnce();
-    expect(deps.notion.pagesCreate).not.toHaveBeenCalled();
+    expect(deps.notion!.pagesCreate).not.toHaveBeenCalled();
     expect(deps.openai.chat.completions.create).not.toHaveBeenCalled(); // no extraction yet
 
     const row = await env.DB
@@ -127,7 +127,7 @@ describe("handleWebhook — single event arrival", () => {
     expect(res.status).toBe(200);
 
     expect(deps.openai.chat.completions.create).toHaveBeenCalledOnce();
-    expect(deps.notion.pagesCreate).not.toHaveBeenCalled(); // transcript not yet
+    expect(deps.notion!.pagesCreate).not.toHaveBeenCalled(); // transcript not yet
     expect(env.VECTORIZE.upsert).not.toHaveBeenCalled();
 
     const row = await env.DB
@@ -144,12 +144,12 @@ describe("handleWebhook — both events arrive", () => {
   it("transcript first then summary: triggers Notion writes on summary event", async () => {
     const deps1 = makeDeps();
     await handleWebhook(await signedRequest(transcriptPayload()), deps1);
-    expect(deps1.notion.pagesCreate).not.toHaveBeenCalled();
+    expect(deps1.notion!.pagesCreate).not.toHaveBeenCalled();
 
     const deps2 = makeDeps();
     await handleWebhook(await signedRequest(summaryPayload()), deps2);
     // 1 transcript page + 2 followups = 3 Notion calls
-    expect(deps2.notion.pagesCreate).toHaveBeenCalledTimes(3);
+    expect(deps2.notion!.pagesCreate).toHaveBeenCalledTimes(3);
 
     const row = await env.DB
       .prepare("SELECT notion_synced_at FROM transcripts WHERE video_id = ?")
@@ -161,11 +161,11 @@ describe("handleWebhook — both events arrive", () => {
   it("summary first then transcript: triggers Notion writes on transcript event", async () => {
     const deps1 = makeDeps();
     await handleWebhook(await signedRequest(summaryPayload()), deps1);
-    expect(deps1.notion.pagesCreate).not.toHaveBeenCalled();
+    expect(deps1.notion!.pagesCreate).not.toHaveBeenCalled();
 
     const deps2 = makeDeps();
     await handleWebhook(await signedRequest(transcriptPayload()), deps2);
-    expect(deps2.notion.pagesCreate).toHaveBeenCalledTimes(3);
+    expect(deps2.notion!.pagesCreate).toHaveBeenCalledTimes(3);
   });
 
   it("threads transcript page id into every Followup Meeting relation", async () => {
@@ -177,7 +177,7 @@ describe("handleWebhook — both events arrive", () => {
 
     // Call 0 is createTranscriptPage → mock returns { id: "page_1" }
     // Calls 1+ are createFollowupRow → should carry Meeting: { relation: [{ id: "page_1" }] }
-    const calls = (deps2.notion.pagesCreate as ReturnType<typeof vi.fn>).mock.calls;
+    const calls = (deps2.notion!.pagesCreate as ReturnType<typeof vi.fn>).mock.calls;
     expect(calls.length).toBe(3);
     const followupBodies = calls.slice(1).map((c) => c[0] as { properties: Record<string, unknown> });
     for (const body of followupBodies) {
@@ -208,11 +208,11 @@ describe("handleWebhook — both events arrive", () => {
     await handleWebhook(await signedRequest(transcriptPayload()), deps1);
     const deps2 = makeDeps();
     await handleWebhook(await signedRequest(summaryPayload()), deps2);
-    expect(deps2.notion.pagesCreate).toHaveBeenCalledTimes(3);
+    expect(deps2.notion!.pagesCreate).toHaveBeenCalledTimes(3);
 
     const deps3 = makeDeps();
     await handleWebhook(await signedRequest(summaryPayload()), deps3);
-    expect(deps3.notion.pagesCreate).not.toHaveBeenCalled();
+    expect(deps3.notion!.pagesCreate).not.toHaveBeenCalled();
   });
 });
 
