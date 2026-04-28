@@ -6,7 +6,7 @@ Tracks are the logical unit of work in aftercall. Each track has a spec (why + w
 
 | Status | Track ID | Title | Created | Updated |
 | ------ | -------- | ----- | ------- | ------- |
-| _none_ | | | | |
+| 🚧 active | [personal-notes-intake](./tracks/personal-notes-intake/) | Local Obsidian notes intake from Codex dumps | 2026-04-27 | 2026-04-27 |
 
 ## Completed
 

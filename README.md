@@ -138,6 +138,22 @@ Sample prompts per tool: [`docs/tools.md`](./docs/tools.md).
 
 ---
 
+## Local Obsidian notes intake
+
+aftercall can also sit next to a local Obsidian vault for personal note dumps.
+This path is local-only: Codex organizes the messy input, then
+`scripts/obsidian-intake.ts` writes Obsidian Markdown into your vault.
+
+```bash
+export OBSIDIAN_VAULT="$HOME/path/to/your/Obsidian Vault"
+npm run notes:intake -- --bootstrap
+pbpaste | npm run notes:intake -- --title "Planning dump"
+```
+
+Details and the structured Codex plan format: [`docs/obsidian-intake.md`](./docs/obsidian-intake.md).
+
+---
+
 ## Architecture
 
 Three flows compose the system. Each has its own diagram and runbook:
@@ -350,4 +366,3 @@ Not promises — just ideas on the shortlist. File an issue if you want to prior
 ## License
 
 MIT — see [LICENSE](./LICENSE).
-
