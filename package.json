@@ -9,6 +9,7 @@
     "dev": "wrangler dev",
     "deploy": "node scripts/deploy.mjs",
     "notes:intake": "node scripts/obsidian-intake.ts",
+    "notes:sync": "node scripts/notes-sync.ts",
     "vault:backup": "node scripts/obsidian-backup.ts",
     "ci:wrangler-config": "node scripts/write-ci-wrangler-toml.mjs",
     "test": "vitest run",
