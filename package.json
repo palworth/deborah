@@ -9,6 +9,7 @@
     "dev": "wrangler dev",
     "deploy": "node scripts/deploy.mjs",
     "notes:intake": "node scripts/obsidian-intake.ts",
+    "ci:wrangler-config": "node scripts/write-ci-wrangler-toml.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
