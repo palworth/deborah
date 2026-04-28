@@ -35,4 +35,6 @@ const migrations = Object.entries(migrationFiles)
 export async function setupD1(): Promise<void> {
   await applyD1Migrations(env.DB, migrations);
   await env.DB.exec("DELETE FROM transcripts");
+  await env.DB.exec("DELETE FROM vault_files");
+  await env.DB.exec("DELETE FROM vault_sync_batches");
 }

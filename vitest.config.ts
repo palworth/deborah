@@ -8,6 +8,7 @@ export default defineWorkersConfig({
           // Real D1 in-memory; Vectorize isn't supported by miniflare yet, so we mock the binding directly in tests
           d1Databases: ["DB"],
           kvNamespaces: ["OAUTH_KV"],
+          r2Buckets: ["VAULT_R2"],
           compatibilityDate: "2024-12-30",
           compatibilityFlags: ["nodejs_compat", "global_fetch_strictly_public"],
           bindings: {
@@ -21,6 +22,7 @@ export default defineWorkersConfig({
             GITHUB_CLIENT_SECRET: "gh-secret-test",
             ALLOWED_USERS: "jchu96",
             BASE_URL: "https://aftercall.test.workers.dev",
+            VAULT_SYNC_SECRET: "vault-sync-test-token",
           },
         },
       },

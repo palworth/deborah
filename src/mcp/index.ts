@@ -16,6 +16,7 @@ import type { Env } from "../env";
 import { createGitHubAuthApp } from "./auth/github";
 import { mcpApiHandler } from "./handler";
 import { handleWebhook, buildHandlerDeps } from "../handler";
+import { handleVaultSync } from "../obsidian/backup";
 
 type Bindings = Env & { OAUTH_PROVIDER: OAuthHelpers };
 
@@ -43,6 +44,10 @@ function createDefaultApp() {
 
   // Health check / root
   app.get("/", (c) => c.json({ service: "aftercall", status: "ok" }));
+
+  // Local Obsidian vault backup endpoint. Authenticated separately from MCP
+  // because the local sync script is not an OAuth client.
+  app.post("/vault/sync", (c) => handleVaultSync(c.req.raw, c.env));
 
   // Fallback: Bluedot webhook on POST. Preserves the pre-MCP behavior where
   // Bluedot hits the worker root with a signed payload.

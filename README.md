@@ -154,6 +154,22 @@ Details and the structured Codex plan format: [`docs/obsidian-intake.md`](./docs
 
 ---
 
+## Local Obsidian vault backup
+
+Deborah can back up a local Obsidian vault to Cloudflare R2 through the Worker.
+The local script uploads changed files to `POST /vault/sync`; the Worker stores
+raw file bodies in R2 and a manifest in D1.
+
+```bash
+export DEBORAH_WORKER_URL="https://aftercall.pierce-9df.workers.dev"
+export VAULT_SYNC_TOKEN="<same value as VAULT_SYNC_SECRET>"
+npm run vault:backup
+```
+
+Details: [`docs/obsidian-backup.md`](./docs/obsidian-backup.md).
+
+---
+
 ## Architecture
 
 Three flows compose the system. Each has its own diagram and runbook:

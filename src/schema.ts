@@ -9,7 +9,7 @@
  * if we ever need to query into them.
  */
 
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export interface ActionItem {
@@ -57,6 +57,35 @@ export const transcripts = sqliteTable("transcripts", {
     .notNull()
     .default(sql`(datetime('now'))`),
 });
+
+export const vaultSyncBatches = sqliteTable("vault_sync_batches", {
+  id: text("id").primaryKey(),
+  vaultName: text("vault_name").notNull(),
+  deviceId: text("device_id"),
+  startedAt: text("started_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  completedAt: text("completed_at"),
+  filesUploaded: integer("files_uploaded").notNull().default(0),
+  filesSkipped: integer("files_skipped").notNull().default(0),
+  filesDeleted: integer("files_deleted").notNull().default(0),
+});
+
+export const vaultFiles = sqliteTable("vault_files", {
+  vaultName: text("vault_name").notNull(),
+  path: text("path").notNull(),
+  r2Key: text("r2_key").notNull(),
+  sha256: text("sha256"),
+  size: integer("size").notNull(),
+  mtimeMs: integer("mtime_ms").notNull(),
+  contentType: text("content_type"),
+  deletedAt: text("deleted_at"),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.vaultName, table.path] }),
+}));
 
 export type Transcript = typeof transcripts.$inferSelect;
 export type NewTranscript = typeof transcripts.$inferInsert;

@@ -36,6 +36,7 @@ const config = {
   d1DatabaseId: requiredEnv("CLOUDFLARE_D1_DATABASE_ID"),
   vectorizeIndexName: env("CLOUDFLARE_VECTORIZE_INDEX_NAME", "aftercall-vectors"),
   kvNamespaceId: requiredEnv("CLOUDFLARE_KV_NAMESPACE_ID"),
+  r2BucketName: env("CLOUDFLARE_VAULT_R2_BUCKET_NAME", "deboahvaultbackups"),
 };
 
 const toml = `name = ${tomlString(config.workerName)}
@@ -65,6 +66,10 @@ remote = true
 [[kv_namespaces]]
 binding = "OAUTH_KV"
 id = ${tomlString(config.kvNamespaceId)}
+
+[[r2_buckets]]
+binding = "VAULT_R2"
+bucket_name = ${tomlString(config.r2BucketName)}
 
 [observability]
 enabled = true
