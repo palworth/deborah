@@ -26,12 +26,17 @@ remote = true
 binding = "OAUTH_KV"
 id = "<set-by-setup-script>"
 
+[[r2_buckets]]
+binding = "VAULT_R2"
+bucket_name = "deborah-vault-backups"
+
 # Secrets (set via `wrangler secret put <NAME>`):
 # - OPENAI_API_KEY
 # - NOTION_INTEGRATION_KEY
 # - BLUEDOT_WEBHOOK_SECRET
 # - GITHUB_CLIENT_ID
 # - GITHUB_CLIENT_SECRET
+# - VAULT_SYNC_SECRET      (local Obsidian backup bearer)
 # - SENTRY_DSN             (optional — enables error tracking + pipeline tracing)
 
 [observability]

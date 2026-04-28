@@ -10,6 +10,7 @@ export interface Env {
   DB: D1Database;
   VECTORIZE: VectorizeIndex;
   OAUTH_KV: KVNamespace;
+  VAULT_R2: R2Bucket;
 
   // Secrets (wrangler secret put)
   OPENAI_API_KEY: string;
@@ -17,6 +18,7 @@ export interface Env {
   BLUEDOT_WEBHOOK_SECRET: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  VAULT_SYNC_SECRET?: string;
 
   // Vars (wrangler.toml)
   OPENAI_EXTRACTION_MODEL: string;
