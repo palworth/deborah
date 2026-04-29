@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-Six tools are exposed at `/mcp`. Every tool returns a single `text` content block — Claude.ai renders the markdown directly.
+Eight tools are exposed at `/mcp`. Every tool returns a single `text` content block — Claude.ai renders the markdown directly.
 
 All tools require a valid bearer token (minted via the GitHub OAuth flow — see [auth.md](./auth.md)).
 
@@ -140,6 +140,69 @@ Returns `"No action items found for \"<person>\""` when no row matches.
 - _"What action items does Andy owe me?"_
 - _"Find everything assigned to Pierce since March."_
 - _"What have I committed to do based on my calls?"_ (with `person: "Jeremy"`)
+
+---
+
+## `list_meetings`
+
+List calls by explicit recurring meeting series and local meeting date. Use this when the user names a known series like `HTS`; it avoids slow semantic search and title guessing.
+
+**Input**
+
+| Param | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `series` | string | yes | — | Series label, for example `HTS`. |
+| `from` | string (`YYYY-MM-DD`) | no | — | Inclusive local-date lower bound. |
+| `to` | string (`YYYY-MM-DD`) | no | — | Inclusive local-date upper bound. |
+| `limit` | integer (1–100) | no | 25 | Max meetings. |
+
+**Output**
+
+```
+Found 3 HTS meetings:
+
+• [2026-04-21] Leadership Team Daily Sync (`meet.google.com/...`)
+• [2026-04-22] Leadership Team Daily Sync (`meet.google.com/...`)
+• [2026-04-27] HTS Meet (`meet.google.com/...`)
+```
+
+**Sample prompts**
+
+- _"Show me my HTS meetings from April 21 through April 28."_
+- _"Which Leadership Team Daily Sync calls do you have for last week?"_
+
+---
+
+## `list_commitments`
+
+List extracted action items from a recurring meeting series/date range. If a matched backfilled meeting has raw transcript text but no extracted action items yet, the tool says so explicitly instead of silently treating it as empty.
+
+**Input**
+
+| Param | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `series` | string | yes | — | Series label, for example `HTS`. |
+| `from` | string (`YYYY-MM-DD`) | no | — | Inclusive local-date lower bound. |
+| `to` | string (`YYYY-MM-DD`) | no | — | Inclusive local-date upper bound. |
+| `person` | string | no | — | Optional owner substring, for example `Pierce`. |
+| `limit` | integer (1–200) | no | 100 | Max commitments. |
+
+**Output**
+
+```
+Found 2 commitments for "Pierce" in HTS meetings:
+
+• [2026-04-22] **Leadership Team Daily Sync** — Send updated vendor list *(owner: Pierce Alworth)* — due 2026-04-24 (`meet.google.com/...`)
+
+1 matched meeting has a raw transcript but no extracted action items yet:
+
+• [2026-04-21] Leadership Team Daily Sync (`backfill:leadership-team-daily-sync`)
+```
+
+**Sample prompts**
+
+- _"Look at all my HTS meetings from 4/21, 4/22, 4/27, and 4/28 and tell me what Pierce promised to follow up on."_
+- _"What commitments came out of Leadership Team Daily Sync last week?"_
 
 ---
 

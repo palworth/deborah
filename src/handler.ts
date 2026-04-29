@@ -111,6 +111,7 @@ async function handleTranscriptEvent(
             rawText: normalized.transcriptText,
             participants: normalized.attendees.map((a) => ({ email: a.email })),
             language: normalized.language,
+            createdAt: normalized.createdAt,
           }),
         );
         log("info", "transcript_event_upserted", {
@@ -219,6 +220,7 @@ async function handleSummaryEvent(
             bluedotSummary: normalized.summaryText,
             participants,
             actionItems: extracted.action_items,
+            createdAt: normalized.createdAt,
           }),
         );
         log("info", "summary_event_upserted", {

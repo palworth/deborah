@@ -1,5 +1,5 @@
 /**
- * MCP server scaffold — registers the 5 aftercall tools on an McpServer
+ * MCP server scaffold — registers aftercall tools on an McpServer
  * instance, wires it through the Streamable HTTP transport.
  *
  * Stateless mode (sessionIdGenerator undefined): every /mcp request is
@@ -16,10 +16,12 @@ import { listFollowups } from "./tools/list_followups";
 import { findActionItemsFor } from "./tools/find_action_items_for";
 import { recentCalls } from "./tools/recent_calls";
 import { answerFromTranscript } from "./tools/answer_from_transcript";
+import { listMeetings } from "./tools/list_meetings";
+import { listCommitments } from "./tools/list_commitments";
 
 export function createMcpServer(env: Env): McpServer {
   const server = new McpServer(
-    { name: "aftercall", version: "0.5.0" },
+    { name: "aftercall", version: "0.6.0" },
     { capabilities: { tools: {} } },
   );
 
@@ -118,6 +120,72 @@ export function createMcpServer(env: Env): McpServer {
       },
     },
     async (args) => (await answerFromTranscript(args, env)) as any,
+  );
+
+  server.registerTool(
+    "list_meetings",
+    {
+      title: "List meetings",
+      description:
+        "List meetings by explicit meeting series and local meeting date. Use this instead of semantic search when the user names a recurring meeting series like HTS.",
+      inputSchema: {
+        series: z
+          .string()
+          .min(1)
+          .describe("Meeting series name, for example `HTS`."),
+        from: z
+          .string()
+          .optional()
+          .describe("Inclusive local date lower bound as YYYY-MM-DD."),
+        to: z
+          .string()
+          .optional()
+          .describe("Inclusive local date upper bound as YYYY-MM-DD."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe("Max meetings to return (default 25, max 100)."),
+      },
+    },
+    async (args) => (await listMeetings(args, env)) as any,
+  );
+
+  server.registerTool(
+    "list_commitments",
+    {
+      title: "List commitments",
+      description:
+        "List extracted commitments/action items from meetings in an explicit series and local date range. Also calls out matched backfilled meetings that still need action-item extraction.",
+      inputSchema: {
+        series: z
+          .string()
+          .min(1)
+          .describe("Meeting series name, for example `HTS`."),
+        from: z
+          .string()
+          .optional()
+          .describe("Inclusive local date lower bound as YYYY-MM-DD."),
+        to: z
+          .string()
+          .optional()
+          .describe("Inclusive local date upper bound as YYYY-MM-DD."),
+        person: z
+          .string()
+          .optional()
+          .describe("Optional owner/person substring to match, for example `Pierce`."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(200)
+          .optional()
+          .describe("Max commitments to return (default 100, max 200)."),
+      },
+    },
+    async (args) => (await listCommitments(args, env)) as any,
   );
 
   server.registerTool(
