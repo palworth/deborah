@@ -50,6 +50,8 @@ export const transcripts = sqliteTable("transcripts", {
     .notNull()
     .default(sql`'[]'`),
   language: text("language"),
+  meetingSeries: text("meeting_series"),
+  localDate: text("local_date"),
   svixId: text("svix_id"),
   notionPageId: text("notion_page_id"),
   notionSyncedAt: text("notion_synced_at"),

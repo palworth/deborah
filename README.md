@@ -47,7 +47,7 @@ Every Bluedot recording becomes:
 2. **Embedded chunks** in Cloudflare Vectorize (1536d, cosine) for semantic search.
 3. **A Notion Transcripts row** — metadata hub (Date, Participants, Recording URL, link to Bluedot's native summary page). No duplicated summary content — Bluedot's own Notion sync owns that.
 4. **One Followup row per action item** in a Notion inbox — `Status = Inbox`, linked via a `Meeting` relation back to the Transcripts row, ready to triage.
-5. **MCP access from Claude.ai** — six tools for semantic search, per-call Q&A (RAG), detail lookup, followups, and owner-scoped action items.
+5. **MCP access from Claude.ai** — tools for semantic search, recurring-meeting lookup, per-call Q&A (RAG), detail lookup, followups, and owner-scoped action items.
 
 Then you ask Claude.ai things like:
 
@@ -131,6 +131,9 @@ Full OAuth + Bluedot + debug walkthrough: [`docs/auth.md`](./docs/auth.md).
 | [`get_call(video_id)`](./docs/tools.md#get_call) | Full details of one call: summary, participants, action items |
 | [`answer_from_transcript(video_id, question)`](./docs/tools.md#answer_from_transcript) | RAG over a single call — drill-down Q&A grounded in that meeting's transcript |
 | [`list_followups(status?, source?, limit?)`](./docs/tools.md#list_followups) | Query the Notion Followups DB with select filters |
+| [`capture_thought(dump, ...)`](./docs/tools.md#capture_thought) | Queue dictated thought dumps and project updates for local Obsidian sync |
+| [`list_meetings(series, from?, to?, limit?)`](./docs/tools.md#list_meetings) | List recurring meetings by explicit series and local meeting date |
+| [`list_commitments(series, from?, to?, person?, limit?)`](./docs/tools.md#list_commitments) | List extracted action items from a recurring meeting series/date range |
 | [`find_action_items_for(person, since?)`](./docs/tools.md#find_action_items_for) | All action items assigned to a person (substring match on owner) |
 | [`recent_calls(days?)`](./docs/tools.md#recent_calls) | Last N days of calls, newest first |
 

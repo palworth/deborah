@@ -368,7 +368,7 @@ Bluedot itself writes a rich summary page per meeting into a "BlueDot Calls" par
 | `src/index.ts` | Worker entry — `export { default } from "./mcp/index"` |
 | `src/mcp/index.ts` | OAuthProvider wiring + Hono default app; owns /authorize, /auth/github/callback, /auth/revoke, /, webhook fallback |
 | `src/mcp/handler.ts` | `/mcp` API handler; dynamic imports `./tools` to keep SDK out of non-MCP test paths |
-| `src/mcp/tools.ts` | `createMcpServer`, `handleMcpRequest`; registers 6 tools with Zod schemas |
+| `src/mcp/tools.ts` | `createMcpServer`, `handleMcpRequest`; registers tools with Zod schemas |
 | `src/mcp/auth/github.ts` | GitHub OAuth handler — state stash, code exchange, user lookup, allowlist check |
 | `src/mcp/auth/allowlist.ts` | Pure `isAllowed(username, csv)` — case/whitespace tolerant |
 | `src/mcp/tools/*.ts` | Pure async tool functions `(args, env, deps?) => ToolResult` |

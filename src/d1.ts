@@ -1,4 +1,9 @@
 import type { ActionItem, Participant } from "./schema";
+import {
+  inferMeetingSeries,
+  localDateFromCreatedAt,
+  sqliteDateTimeFromDate,
+} from "./meeting_metadata";
 
 export interface TranscriptEventInput {
   videoId: string;
@@ -7,6 +12,9 @@ export interface TranscriptEventInput {
   rawText: string;
   participants: Participant[];
   language?: string;
+  createdAt?: Date;
+  meetingSeries?: string;
+  localDate?: string;
 }
 
 export interface SummaryEventInput {
@@ -17,6 +25,9 @@ export interface SummaryEventInput {
   summary: string;
   participants: Participant[];
   actionItems: ActionItem[];
+  createdAt?: Date;
+  meetingSeries?: string;
+  localDate?: string;
 }
 
 export interface UpsertResult {
@@ -54,6 +65,19 @@ interface RowState {
   notion_synced_at: string | null;
 }
 
+function meetingMetadata(input: {
+  title: string;
+  createdAt?: Date;
+  meetingSeries?: string;
+  localDate?: string;
+}) {
+  return {
+    createdAtSql: sqliteDateTimeFromDate(input.createdAt) ?? null,
+    meetingSeries: input.meetingSeries ?? inferMeetingSeries(input.title) ?? null,
+    localDate: input.localDate ?? localDateFromCreatedAt(input.createdAt) ?? null,
+  };
+}
+
 /**
  * Upsert from a transcript event. Idempotent against retries.
  *
@@ -67,11 +91,14 @@ export async function upsertFromTranscriptEvent(
   db: D1Database,
   input: TranscriptEventInput,
 ): Promise<UpsertResult> {
+  const metadata = meetingMetadata(input);
+
   // Try insert first (most common case)
   const inserted = await db
     .prepare(
-      `INSERT INTO transcripts (video_id, title, raw_text, language, participants, svix_id)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+      `INSERT INTO transcripts
+         (video_id, title, raw_text, language, participants, svix_id, created_at, meeting_series, local_date)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, COALESCE(?7, datetime('now')), ?8, ?9)
        ON CONFLICT (video_id) DO NOTHING
        RETURNING id`,
     )
@@ -82,6 +109,9 @@ export async function upsertFromTranscriptEvent(
       input.language ?? null,
       JSON.stringify(input.participants),
       input.svixId,
+      metadata.createdAtSql,
+      metadata.meetingSeries,
+      metadata.localDate,
     )
     .first<{ id: number } | null>();
 
@@ -111,13 +141,17 @@ export async function upsertFromTranscriptEvent(
       .prepare(
         `UPDATE transcripts
          SET raw_text = ?1, language = COALESCE(language, ?2),
-             participants = CASE WHEN participants = '[]' THEN ?3 ELSE participants END
-         WHERE id = ?4`,
+             participants = CASE WHEN participants = '[]' THEN ?3 ELSE participants END,
+             meeting_series = COALESCE(meeting_series, ?4),
+             local_date = COALESCE(local_date, ?5)
+         WHERE id = ?6`,
       )
       .bind(
         input.rawText,
         input.language ?? null,
         JSON.stringify(input.participants),
+        metadata.meetingSeries,
+        metadata.localDate,
         existing.id,
       )
       .run();
@@ -143,11 +177,13 @@ export async function upsertFromSummaryEvent(
   db: D1Database,
   input: SummaryEventInput,
 ): Promise<UpsertResult> {
+  const metadata = meetingMetadata(input);
+
   const inserted = await db
     .prepare(
       `INSERT INTO transcripts
-         (video_id, title, summary, bluedot_summary, participants, action_items, svix_id)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         (video_id, title, summary, bluedot_summary, participants, action_items, svix_id, created_at, meeting_series, local_date)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, COALESCE(?8, datetime('now')), ?9, ?10)
        ON CONFLICT (video_id) DO NOTHING
        RETURNING id`,
     )
@@ -159,6 +195,9 @@ export async function upsertFromSummaryEvent(
       JSON.stringify(input.participants),
       JSON.stringify(input.actionItems),
       input.svixId,
+      metadata.createdAtSql,
+      metadata.meetingSeries,
+      metadata.localDate,
     )
     .first<{ id: number } | null>();
 
@@ -187,14 +226,18 @@ export async function upsertFromSummaryEvent(
       .prepare(
         `UPDATE transcripts
          SET summary = ?1, bluedot_summary = ?2, action_items = ?3,
-             participants = CASE WHEN participants = '[]' THEN ?4 ELSE participants END
-         WHERE id = ?5`,
+             participants = CASE WHEN participants = '[]' THEN ?4 ELSE participants END,
+             meeting_series = COALESCE(meeting_series, ?5),
+             local_date = COALESCE(local_date, ?6)
+         WHERE id = ?7`,
       )
       .bind(
         input.summary,
         input.bluedotSummary,
         JSON.stringify(input.actionItems),
         JSON.stringify(input.participants),
+        metadata.meetingSeries,
+        metadata.localDate,
         existing.id,
       )
       .run();

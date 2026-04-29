@@ -45,6 +45,23 @@ describe("upsertFromTranscriptEvent", () => {
     expect(r.alreadyNotionSynced).toBe(false);
   });
 
+  it("stores meeting metadata for recognized recurring calls", async () => {
+    await upsertFromTranscriptEvent(env.DB, {
+      ...transcriptInput,
+      title: "Leadership Team Daily Sync",
+      createdAt: new Date("2026-04-23T00:09:12Z"),
+    });
+
+    const row = await env.DB
+      .prepare("SELECT meeting_series, local_date, created_at FROM transcripts WHERE video_id = ?")
+      .bind(VIDEO_ID)
+      .first<{ meeting_series: string | null; local_date: string | null; created_at: string }>();
+
+    expect(row?.meeting_series).toBe("HTS");
+    expect(row?.local_date).toBe("2026-04-22");
+    expect(row?.created_at).toBe("2026-04-23 00:09:12");
+  });
+
   it("is idempotent on retry — second call sees existing row", async () => {
     await upsertFromTranscriptEvent(env.DB, transcriptInput);
     const r = await upsertFromTranscriptEvent(env.DB, transcriptInput);
@@ -64,6 +81,22 @@ describe("upsertFromSummaryEvent", () => {
     const r = await upsertFromSummaryEvent(env.DB, summaryInput);
     expect(r.inserted).toBe(true);
     expect(r.bothEventsPresent).toBe(false);
+  });
+
+  it("adds meeting metadata when summary arrives before transcript", async () => {
+    await upsertFromSummaryEvent(env.DB, {
+      ...summaryInput,
+      title: "HTS Meet",
+      createdAt: new Date("2026-04-27T18:33:43Z"),
+    });
+
+    const row = await env.DB
+      .prepare("SELECT meeting_series, local_date FROM transcripts WHERE video_id = ?")
+      .bind(VIDEO_ID)
+      .first<{ meeting_series: string | null; local_date: string | null }>();
+
+    expect(row?.meeting_series).toBe("HTS");
+    expect(row?.local_date).toBe("2026-04-27");
   });
 
   it("is idempotent on retry", async () => {
