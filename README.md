@@ -170,6 +170,20 @@ Details: [`docs/obsidian-backup.md`](./docs/obsidian-backup.md).
 
 ---
 
+## Obsidian note inbox sync
+
+Deborah can queue dictated thoughts and project updates from MCP clients, then a
+local sync command writes them into the Obsidian vault.
+
+```bash
+export DEBORAH_WORKER_URL="https://aftercall.pierce-9df.workers.dev"
+npm run notes:sync
+```
+
+Details: [`docs/note-inbox-sync.md`](./docs/note-inbox-sync.md).
+
+---
+
 ## Architecture
 
 Three flows compose the system. Each has its own diagram and runbook:

@@ -87,5 +87,24 @@ export const vaultFiles = sqliteTable("vault_files", {
   pk: primaryKey({ columns: [table.vaultName, table.path] }),
 }));
 
+export const noteInbox = sqliteTable("note_inbox", {
+  id: text("id").primaryKey(),
+  source: text("source").notNull().default("mcp"),
+  title: text("title"),
+  dump: text("dump").notNull(),
+  intakePlan: text("intake_plan", { mode: "json" }).notNull(),
+  status: text("status").notNull().default("pending"),
+  error: text("error"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  syncedAt: text("synced_at"),
+  syncDevice: text("sync_device"),
+  obsidianPaths: text("obsidian_paths", { mode: "json" })
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'`),
+});
+
 export type Transcript = typeof transcripts.$inferSelect;
 export type NewTranscript = typeof transcripts.$inferInsert;
