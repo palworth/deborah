@@ -1,8 +1,28 @@
 # MCP Tools Reference
 
-Eight tools are exposed at `/mcp`. Every tool returns a single `text` content block — Claude.ai renders the markdown directly.
+Nine tools are exposed at `/mcp`. Every tool returns a single `text` content block — Claude.ai renders the markdown directly.
 
 All tools require a valid bearer token (minted via the GitHub OAuth flow — see [auth.md](./auth.md)).
+
+## `capture_thought`
+
+Queue a raw thought dump, project update, task list, or decision for local
+Obsidian sync. Deborah stores the capture in D1; `npm run notes:sync` writes it
+to the local vault later.
+
+Required:
+
+- `dump` — raw text to preserve.
+
+Optional:
+
+- `title`
+- `summary`
+- `tags`
+- `projects`
+- `people`
+- `tasks`
+- `decisions`
 
 ---
 

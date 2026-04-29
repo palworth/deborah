@@ -131,6 +131,7 @@ Full OAuth + Bluedot + debug walkthrough: [`docs/auth.md`](./docs/auth.md).
 | [`get_call(video_id)`](./docs/tools.md#get_call) | Full details of one call: summary, participants, action items |
 | [`answer_from_transcript(video_id, question)`](./docs/tools.md#answer_from_transcript) | RAG over a single call — drill-down Q&A grounded in that meeting's transcript |
 | [`list_followups(status?, source?, limit?)`](./docs/tools.md#list_followups) | Query the Notion Followups DB with select filters |
+| [`capture_thought(dump, ...)`](./docs/tools.md#capture_thought) | Queue dictated thought dumps and project updates for local Obsidian sync |
 | [`list_meetings(series, from?, to?, limit?)`](./docs/tools.md#list_meetings) | List recurring meetings by explicit series and local meeting date |
 | [`list_commitments(series, from?, to?, person?, limit?)`](./docs/tools.md#list_commitments) | List extracted action items from a recurring meeting series/date range |
 | [`find_action_items_for(person, since?)`](./docs/tools.md#find_action_items_for) | All action items assigned to a person (substring match on owner) |
@@ -169,6 +170,20 @@ npm run vault:backup
 ```
 
 Details: [`docs/obsidian-backup.md`](./docs/obsidian-backup.md).
+
+---
+
+## Obsidian note inbox sync
+
+Deborah can queue dictated thoughts and project updates from MCP clients, then a
+local sync command writes them into the Obsidian vault.
+
+```bash
+export DEBORAH_WORKER_URL="https://aftercall.pierce-9df.workers.dev"
+npm run notes:sync
+```
+
+Details: [`docs/note-inbox-sync.md`](./docs/note-inbox-sync.md).
 
 ---
 

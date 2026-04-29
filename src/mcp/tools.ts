@@ -18,6 +18,7 @@ import { recentCalls } from "./tools/recent_calls";
 import { answerFromTranscript } from "./tools/answer_from_transcript";
 import { listMeetings } from "./tools/list_meetings";
 import { listCommitments } from "./tools/list_commitments";
+import { captureThought } from "../notes/inbox";
 
 export function createMcpServer(env: Env): McpServer {
   const server = new McpServer(
@@ -186,6 +187,69 @@ export function createMcpServer(env: Env): McpServer {
       },
     },
     async (args) => (await listCommitments(args, env)) as any,
+  );
+
+  server.registerTool(
+    "capture_thought",
+    {
+      title: "Capture thought for Obsidian",
+      description:
+        "Capture a user brain dump, project update, task, or decision into Deborah's note inbox. The local sync agent will later write it into the user's Obsidian vault as Markdown.",
+      inputSchema: {
+        title: z.string().optional().describe("Short title for the captured dump."),
+        dump: z.string().min(1).describe("The raw thought dump to preserve and sync to Obsidian."),
+        summary: z.string().optional().describe("One or two sentence organized summary."),
+        tags: z.array(z.string()).optional().describe("Obsidian-friendly tags without #."),
+        projects: z
+          .array(
+            z.object({
+              name: z.string().min(1),
+              status: z.enum(["active", "paused", "waiting", "done"]).optional(),
+              summary: z.string().optional(),
+              notes: z.array(z.string()).optional(),
+              nextActions: z.array(z.string()).optional(),
+            }),
+          )
+          .optional()
+          .describe("Project notes or updates inferred from the dump."),
+        people: z
+          .array(
+            z.object({
+              name: z.string().min(1),
+              summary: z.string().optional(),
+              notes: z.array(z.string()).optional(),
+              nextActions: z.array(z.string()).optional(),
+            }),
+          )
+          .optional()
+          .describe("People notes or follow-ups inferred from the dump."),
+        tasks: z
+          .array(
+            z.object({
+              text: z.string().min(1),
+              project: z.string().optional(),
+              person: z.string().optional(),
+              due: z.string().optional(),
+              priority: z.enum(["low", "medium", "high"]).optional(),
+              status: z.enum(["todo", "doing", "done"]).optional(),
+            }),
+          )
+          .optional()
+          .describe("Concrete next actions from the dump."),
+        decisions: z
+          .array(
+            z.object({
+              title: z.string().min(1),
+              project: z.string().optional(),
+              decision: z.string().min(1),
+              rationale: z.string().optional(),
+            }),
+          )
+          .optional()
+          .describe("Decisions to create as Obsidian decision notes."),
+      },
+    },
+    async (args) => (await captureThought(args, env)) as any,
   );
 
   server.registerTool(
